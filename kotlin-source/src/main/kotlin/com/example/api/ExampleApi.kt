@@ -1,8 +1,10 @@
 package com.example.api
 
-import com.example.flow.ExampleFlow.Initiator
-import com.example.state.IOUState
+import com.example.flow.BidFlow
+import com.example.flow.BidFlow.Initiator
+import com.example.state.BidState
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startTrackedFlow
 import net.corda.core.messaging.vaultQueryBy
@@ -26,6 +28,7 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
         private val logger: Logger = loggerFor<ExampleApi>()
     }
 
+
     /**
      * Returns the node's name.
      */
@@ -33,6 +36,8 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
     @Path("me")
     @Produces(MediaType.APPLICATION_JSON)
     fun whoami() = mapOf("me" to myLegalName)
+
+
 
     /**
      * Returns all parties registered with the [NetworkMapService]. These names can be used to look up identities
@@ -50,12 +55,12 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
     }
 
     /**
-     * Displays all IOU states that exist in the node's vault.
+     * Displays all Bid states that exist in the node's vault.
      */
     @GET
     @Path("ious")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getIOUs() = rpcOps.vaultQueryBy<IOUState>().states
+    fun getIOUs() = rpcOps.vaultQueryBy<BidState>().states
 
     /**
      * Initiates a flow to agree an IOU between two parties.
@@ -69,19 +74,44 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
      * The flow is invoked asynchronously. It returns a future when the flow's call() method returns.
      */
     @PUT
-    @Path("create-iou")
-    fun createIOU(@QueryParam("iouValue") iouValue: Int, @QueryParam("partyName") partyName: CordaX500Name?): Response {
-        if (iouValue <= 0 ) {
+    @Path("create-bid")
+    fun createIOU(@QueryParam("bidValue") bidValue: Int, @QueryParam("bidderName") bidderName: List<String>): Response {
+        if (bidValue <= 0 ) {
             return Response.status(BAD_REQUEST).entity("Query parameter 'iouValue' must be non-negative.\n").build()
         }
-        if (partyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'partyName' missing or has wrong format.\n").build()
+
+        val bidders = ArrayList<Party>()
+
+        println("BIdders size"+ bidderName.size)
+
+
+        for (i in bidderName.indices) {
+            println("The bidderName is "+bidderName[i])
+            if(bidderName[i].equals("BidderA")) {
+                println("Inside BidderA ")
+                val biddername = rpcOps.wellKnownPartyFromX500Name(CordaX500Name("BidderA", "New York", "US")) ?:
+                        return Response.status(BAD_REQUEST).entity("Party named $bidderName[i] cannot be found.\n").build()
+                bidders.add(biddername)
+            }else if(bidderName[i].equals("BidderB")) {
+                println("Inside BidderB ")
+                val biddername = rpcOps.wellKnownPartyFromX500Name(CordaX500Name("BidderB", "Paris", "FR")) ?:
+                        return Response.status(BAD_REQUEST).entity("Party named $bidderName[i] cannot be found.\n").build()
+                bidders.add(biddername)
+            }else if(bidderName[i].equals("BidderC")) {
+                println("Inside BidderC ")
+                val biddername = rpcOps.wellKnownPartyFromX500Name(CordaX500Name("BidderC", "Paris", "FR")) ?:
+                        return Response.status(BAD_REQUEST).entity("Party named $bidderName[i] cannot be found.\n").build()
+                bidders.add(biddername)
+            }else {
+                return Response.status(BAD_REQUEST).entity("Party named $bidderName[i] cannot be found.\n").build()
+            }
+
         }
-        val otherParty = rpcOps.wellKnownPartyFromX500Name(partyName) ?:
-                return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
+
+
 
         return try {
-            val flowHandle = rpcOps.startTrackedFlow(::Initiator, iouValue, otherParty)
+            val flowHandle = rpcOps.startTrackedFlow(::Initiator, bidValue, bidders)
             flowHandle.progress.subscribe { println(">> $it") }
 
             // The line below blocks and waits for the future to resolve.
@@ -94,4 +124,19 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
             Response.status(BAD_REQUEST).entity(ex.message!!).build()
         }
     }
+
+    //T code
+    @GET
+    @Path("sample")
+    @Produces("application/json")
+    fun sampleme(@QueryParam("name") name: String): Response {
+        val myname = name+"Sundaram";
+        println("=====>myname"+myname)
+
+        return Response.ok(myname, MediaType.TEXT_HTML).build();
+    }
+
+
+//T code
+
 }

@@ -68,37 +68,41 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         cordapps = ["net.corda:corda-finance:$corda_release_version"]
     }
     node {
-        name "O=PartyA,L=London,C=GB"
+        name "O=Admin,L=London,C=GB"
         advertisedServices = []
         p2pPort 10005
         rpcPort 10006
         webPort 10007
         cordapps = ["net.corda:corda-finance:$corda_release_version"]
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": [
-                "StartFlow.com.example.flow.ExampleFlow\$Initiator"
-        ]]]
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
-        name "O=PartyB,L=New York,C=US"
+        name "O=BidderA,L=New York,C=US"
         advertisedServices = []
         p2pPort 10008
         rpcPort 10009
         webPort 10010
         cordapps = ["net.corda:corda-finance:$corda_release_version"]
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": [
-                "StartFlow.com.example.flow.ExampleFlow\$Initiator"
-        ]]]
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
-        name "O=PartyC,L=Paris,C=FR"
+        name "O=BidderB,L=Paris,C=FR"
         advertisedServices = []
         p2pPort 10011
         rpcPort 10012
         webPort 10013
         cordapps = ["net.corda:corda-finance:$corda_release_version"]
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": [
-                "StartFlow.com.example.flow.ExampleFlow\$Initiator"
-        ]]]
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+
+    node {
+        name "O=BidderC,L=Paris,C=FR"
+        advertisedServices = []
+        p2pPort 10014
+        rpcPort 10015
+        webPort 10016
+        cordapps = ["net.corda:corda-finance:$corda_release_version"]
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
 }
 

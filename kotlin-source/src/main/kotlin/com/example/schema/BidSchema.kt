@@ -10,26 +10,26 @@ import javax.persistence.Table
 /**
  * The family of schemas for IOUState.
  */
-object IOUSchema
+object BidSchema
 
 /**
  * An IOUState schema.
  */
-object IOUSchemaV1 : MappedSchema(
-        schemaFamily = IOUSchema.javaClass,
+object BidSchemaV1 : MappedSchema(
+        schemaFamily = BidSchema.javaClass,
         version = 1,
         mappedTypes = listOf(PersistentIOU::class.java)) {
     @Entity
-    @Table(name = "iou_states")
+    @Table(name = "Bid_states")
     class PersistentIOU(
-            @Column(name = "lender")
-            var lenderName: String,
+            @Column(name = "admin")
+            var adminName: String,
 
-            @Column(name = "borrower")
-            var borrowerName: String,
+            @Column(name = "bidderrs")
+            var bidderName: String,
 
-            @Column(name = "value")
-            var value: Int,
+            @Column(name = "bidvalue")
+            var bidvalue: Int,
 
             @Column(name = "linear_id")
             var linearId: UUID
