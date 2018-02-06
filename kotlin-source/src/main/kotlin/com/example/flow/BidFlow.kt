@@ -39,9 +39,9 @@ object BidFlow {
             object GENERATING_TRANSACTION : Step("Generating transaction based on new IOU.")
             object VERIFYING_TRANSACTION : Step("Verifying contract constraints.")
             object SIGNING_TRANSACTION : Step("Signing transaction with our private key.")
-            /*object GATHERING_SIGS : Step("Gathering the counterparty's signature.") {
+            object GATHERING_SIGS : Step("Gathering the counterparty's signature.") {
                 override fun childProgressTracker() = CollectSignaturesFlow.tracker()
-            }*/
+            }
 
             object FINALISING_TRANSACTION : Step("Obtaining notary signature and recording transaction.") {
                 override fun childProgressTracker() = FinalityFlow.tracker()
@@ -51,7 +51,7 @@ object BidFlow {
                     GENERATING_TRANSACTION,
                     VERIFYING_TRANSACTION,
                     SIGNING_TRANSACTION,
-               //     GATHERING_SIGS,
+                   GATHERING_SIGS,
                     FINALISING_TRANSACTION
             )
         }
@@ -87,10 +87,13 @@ object BidFlow {
 
 
             // Stage 4.
+           // val otherPartyFlow = initiateFlow(otherParty)
+            val otherPartyFlow = initiateFlow(bidders[0])
+            progressTracker.currentStep = GATHERING_SIGS
             // Send the state to the counterparty, and receive it back with their signature.
-            /*progressTracker.currentStep = GATHERING_SIGS
-            val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, GATHERING_SIGS.childProgressTracker()))
-*/
+            val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow), GATHERING_SIGS.childProgressTracker()))
+
+
             // Stage 5.
             progressTracker.currentStep = FINALISING_TRANSACTION
             // Notarise and record the transaction in both parties' vaults.
