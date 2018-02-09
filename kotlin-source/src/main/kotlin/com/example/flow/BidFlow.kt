@@ -83,25 +83,29 @@ object BidFlow {
             // Sign the transaction.
             val partSignedTx = serviceHub.signInitialTransaction(txBuilder)
 
-
-
-
-            // Stage 4.
-           // val otherPartyFlow = initiateFlow(otherParty)
-            val otherPartyFlow = initiateFlow(bidders[0])
+            //stage 4
             progressTracker.currentStep = GATHERING_SIGS
-            // Send the state to the counterparty, and receive it back with their signature.
-            val fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow), GATHERING_SIGS.childProgressTracker()))
+            val fullySignedTx:SignedTransaction
+            var arraySize = bidders.size
+
+
+
+            if(arraySize==1){
+                val otherPartyFlow = initiateFlow(bidders[0])
+                fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow), GATHERING_SIGS.childProgressTracker()))
+            }else {
+                val otherPartyFlow = initiateFlow(bidders[0])
+                val otherPartyFlow1 = initiateFlow(bidders[1])
+                fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow,otherPartyFlow1), GATHERING_SIGS.childProgressTracker()))
+
+            }
 
 
             // Stage 5.
             progressTracker.currentStep = FINALISING_TRANSACTION
             // Notarise and record the transaction in both parties' vaults.
-
-
-             return subFlow(FinalityFlow(partSignedTx, FINALISING_TRANSACTION.childProgressTracker()))
-
-        }
+            return subFlow(FinalityFlow(fullySignedTx, FINALISING_TRANSACTION.childProgressTracker()))
+      }
 
     }
 
@@ -115,6 +119,7 @@ object BidFlow {
                     "This must be an Bid Create." using (output is BidState)
                     val bid = output as BidState
                     "I won't accept Bid with a value less than 100." using (bid.bidValue >= 100)
+                    //"The list should contain atleast one bid" using (bid.bidders.isEmpty())
                 }
             }
 
