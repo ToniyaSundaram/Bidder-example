@@ -84,8 +84,6 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
 
         val bidders = ArrayList<Party>()
 
-        println("BIdders size"+ bidderName.size)
-
 
         for (i in bidderName.indices) {
             println("The bidderName is "+bidderName[i])
@@ -144,6 +142,7 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
                 return Response.status(BAD_REQUEST).entity("Admin node cannot be found.\n").build()
 
         return try {
+        if(myLegalName!=CordaX500Name("Admin", "London", "GB")) {
             val flowHandle = rpcOps.startTrackedFlow(::Acceptor, bidValue,admin)
             flowHandle.progress.subscribe { println(">> $it") }
 
@@ -152,10 +151,14 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
 
             Response.status(CREATED).entity("Transaction id ${result.id} committed to ledger.\n").build()
 
-        } catch (ex: Throwable) {
+        }else {
+            return Response.status(BAD_REQUEST).entity("Admin is not authorized to submit a Bid  \n").build()
+        }
+        }catch (ex: Throwable) {
             logger.error(ex.message, ex)
             Response.status(BAD_REQUEST).entity(ex.message!!).build()
         }
+
     }
 
 }
