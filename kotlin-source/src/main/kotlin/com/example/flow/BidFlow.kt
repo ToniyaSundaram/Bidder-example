@@ -70,6 +70,7 @@ object BidFlow {
             progressTracker.currentStep = GENERATING_TRANSACTION
             // Generate an unsigned transaction.
             val bidState = BidState(bidValue, serviceHub.myInfo.legalIdentities.first(), bidders)
+
             val txCommand = Command(BidContract.Commands.Create(), bidState.participants.map { it.owningKey })
             val txBuilder = TransactionBuilder(notary).withItems(StateAndContract(bidState, Bid_CONTRACT_ID), txCommand)
 
@@ -93,11 +94,16 @@ object BidFlow {
             if(arraySize==1){
                 val otherPartyFlow = initiateFlow(bidders[0])
                 fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow), GATHERING_SIGS.childProgressTracker()))
-            }else {
+            }else if(arraySize==2){
                 val otherPartyFlow = initiateFlow(bidders[0])
                 val otherPartyFlow1 = initiateFlow(bidders[1])
                 fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow,otherPartyFlow1), GATHERING_SIGS.childProgressTracker()))
 
+            }else {
+                val otherPartyFlow = initiateFlow(bidders[0])
+                val otherPartyFlow1 = initiateFlow(bidders[1])
+                val otherPartyFlow2 = initiateFlow(bidders[2])
+                fullySignedTx = subFlow(CollectSignaturesFlow(partSignedTx, setOf(otherPartyFlow,otherPartyFlow1,otherPartyFlow2), GATHERING_SIGS.childProgressTracker()))
             }
 
 
@@ -116,10 +122,10 @@ object BidFlow {
             val signTransactionFlow = object : SignTransactionFlow(otherPartyFlow) {
                 override fun checkTransaction(stx: SignedTransaction) = requireThat {
                     val output = stx.tx.outputs.single().data
-                    "This must be an Bid Create." using (output is BidState)
+                    "This must be a Bid Creation." using (output is BidState)
                     val bid = output as BidState
                     "I won't accept Bid with a value less than 100." using (bid.bidValue >= 100)
-                    //"The list should contain atleast one bid" using (bid.bidders.isEmpty())
+
                 }
             }
 
