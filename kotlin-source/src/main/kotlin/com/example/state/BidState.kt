@@ -20,18 +20,18 @@ import net.corda.core.schemas.QueryableState
  * @param bidders is the list of Bidders who have access to the created Bid.
  */
 data class BidState(val bidValue: Int,
-                    val bidAdmin: Party,
-                    val bidders: List<Party>,
+                    val initiator: Party,
+                    val acceptor: List<Party>,
                     override val linearId: UniqueIdentifier = UniqueIdentifier()):
         LinearState, QueryableState {
     /** The public keys of the involved parties. */
-    override val participants: List<AbstractParty> get() = listOf(bidAdmin)+bidders
+    override val participants: List<AbstractParty> get() = listOf(initiator)+acceptor
 
     override fun generateMappedObject(schema: MappedSchema): PersistentState {
         return when (schema) {
-            is BidSchemaV1  -> BidSchemaV1.PersistentIOU(
-                    this.bidAdmin.name.toString(),
-                    this.bidders.toString(),
+            is BidSchemaV1  -> BidSchemaV1.PersistentBid(
+                    this.initiator.name.toString(),
+                    this.acceptor.toString(),
                     this.bidValue,
                     this.linearId.id
             )

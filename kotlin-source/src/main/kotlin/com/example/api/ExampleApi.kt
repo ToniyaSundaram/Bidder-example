@@ -2,6 +2,8 @@ package com.example.api
 
 import com.example.flow.BidFlow
 import com.example.flow.BidFlow.Initiator
+import com.example.flow.SubmitBidFlow
+import com.example.flow.SubmitBidFlow.Acceptor
 import com.example.state.BidState
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
@@ -58,9 +60,9 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
      * Displays all Bid states that exist in the node's vault.
      */
     @GET
-    @Path("created-bids")
+    @Path("bids")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getIOUs() = rpcOps.vaultQueryBy<BidState>().states
+    fun getBids() = rpcOps.vaultQueryBy<BidState>().states
 
     /**
      * Initiates a flow to agree an IOU between two parties.
@@ -74,8 +76,8 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
      * The flow is invoked asynchronously. It returns a future when the flow's call() method returns.
      */
     @PUT
-    @Path("bids")
-    fun createIOU(@QueryParam("bidValue") bidValue: Int, @QueryParam("bidderName") bidderName: List<String>): Response {
+    @Path("create-bid")
+    fun createBid(@QueryParam("bidValue") bidValue: Int, @QueryParam("bidderName") bidderName: List<String>): Response {
         if (bidValue <= 0 ) {
             return Response.status(BAD_REQUEST).entity("Query parameter 'iouValue' must be non-negative.\n").build()
         }
@@ -130,18 +132,32 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
         }
     }
 
-    //T code
-    @PUT
-    @Path("sample")
-    @Produces("application/json")
-    fun sampleme(@QueryParam("name") name: String): Response {
-        val myname = name+"Sundaram"
-        println("=====>myname"+myname)
 
-        return Response.ok(myname, MediaType.TEXT_HTML).build()
+    @PUT
+    @Path("submit-bid")
+    fun submitBid(@QueryParam("bid_value") bidValue: Int): Response {
+
+        if (bidValue <= 0 ) {
+            return Response.status(BAD_REQUEST).entity("Query parameter 'bidValue' must be non-negative.\n").build()
+        }
+        val admin = rpcOps.wellKnownPartyFromX500Name(CordaX500Name("Admin", "London", "GB")) ?:
+                return Response.status(BAD_REQUEST).entity("Admin node cannot be found.\n").build()
+
+        return try {
+            val flowHandle = rpcOps.startTrackedFlow(::Acceptor, bidValue,admin)
+            flowHandle.progress.subscribe { println(">> $it") }
+
+            // The line below blocks and waits for the future to resolve.
+            val result = flowHandle.returnValue.getOrThrow()
+
+            Response.status(CREATED).entity("Transaction id ${result.id} committed to ledger.\n").build()
+
+        } catch (ex: Throwable) {
+            logger.error(ex.message, ex)
+            Response.status(BAD_REQUEST).entity(ex.message!!).build()
+        }
     }
 
-
-//T code
-
 }
+
+
