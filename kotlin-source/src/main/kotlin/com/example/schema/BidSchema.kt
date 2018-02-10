@@ -18,10 +18,10 @@ object BidSchema
 object BidSchemaV1 : MappedSchema(
         schemaFamily = BidSchema.javaClass,
         version = 1,
-        mappedTypes = listOf(PersistentIOU::class.java)) {
+        mappedTypes = listOf(PersistentBid::class.java)) {
     @Entity
     @Table(name = "Bid_states")
-    class PersistentIOU(
+    class PersistentBid(
             @Column(name = "admin")
             var adminName: String,
 
