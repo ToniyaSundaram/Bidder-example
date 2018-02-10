@@ -58,7 +58,7 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
      * Displays all Bid states that exist in the node's vault.
      */
     @GET
-    @Path("ious")
+    @Path("created-bids")
     @Produces(MediaType.APPLICATION_JSON)
     fun getIOUs() = rpcOps.vaultQueryBy<BidState>().states
 
@@ -74,7 +74,7 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
      * The flow is invoked asynchronously. It returns a future when the flow's call() method returns.
      */
     @PUT
-    @Path("create-bid")
+    @Path("bids")
     fun createIOU(@QueryParam("bidValue") bidValue: Int, @QueryParam("bidderName") bidderName: List<String>): Response {
         if (bidValue <= 0 ) {
             return Response.status(BAD_REQUEST).entity("Query parameter 'iouValue' must be non-negative.\n").build()
@@ -109,15 +109,20 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
         }
 
 
-
         return try {
-            val flowHandle = rpcOps.startTrackedFlow(::Initiator, bidValue, bidders)
-            flowHandle.progress.subscribe { println(">> $it") }
 
-            // The line below blocks and waits for the future to resolve.
-            val result = flowHandle.returnValue.getOrThrow()
+            if(myLegalName==CordaX500Name("Admin", "London", "GB")) {
+                val flowHandle = rpcOps.startTrackedFlow(::Initiator, bidValue, bidders)
+                flowHandle.progress.subscribe { println(">> $it") }
 
-            Response.status(CREATED).entity("Transaction id ${result.id} committed to ledger.\n").build()
+                // The line below blocks and waits for the future to resolve.
+                val result = flowHandle.returnValue.getOrThrow()
+
+                Response.status(CREATED).entity("Transaction id ${result.id} Successfully created a Bid\n").build()
+
+            }else {
+                return Response.status(BAD_REQUEST).entity("Only Admin is authorized to create a Bid  \n").build()
+            }
 
         } catch (ex: Throwable) {
             logger.error(ex.message, ex)
@@ -126,14 +131,14 @@ class ExampleApi(private val rpcOps: CordaRPCOps) {
     }
 
     //T code
-    @GET
+    @PUT
     @Path("sample")
     @Produces("application/json")
     fun sampleme(@QueryParam("name") name: String): Response {
-        val myname = name+"Sundaram";
+        val myname = name+"Sundaram"
         println("=====>myname"+myname)
 
-        return Response.ok(myname, MediaType.TEXT_HTML).build();
+        return Response.ok(myname, MediaType.TEXT_HTML).build()
     }
 
 
